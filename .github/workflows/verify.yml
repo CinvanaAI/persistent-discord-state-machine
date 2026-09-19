@@ -1,0 +1,28 @@
+name: verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install test tooling
+        run: python -m pip install --upgrade pip setuptools wheel pytest
+      - name: Run persistence tests with resource warnings enabled
+        run: python -W error::ResourceWarning -m pytest -q
+      - name: Run restart-resume demo
+        run: python examples/resume_demo.py
+      - name: Compile package
+        run: python -m compileall -q persistent_discord_state_machine
+      - name: Build wheel
+        run: python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist

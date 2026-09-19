@@ -1,0 +1,4 @@
+started WorkflowSession(guild_id=42, user_id=1001, state='choose_name', payload={'campaign': 'Synthetic'}, revision=1, updated_at='2026-09-19T14:14:24Z')
+resumed WorkflowSession(guild_id=42, user_id=1001, state='choose_name', payload={'campaign': 'Synthetic'}, revision=1, updated_at='2026-09-19T14:14:24Z')
+transitioned WorkflowSession(guild_id=42, user_id=1001, state='confirm', payload={'campaign': 'Synthetic', 'name': 'Example Hero'}, revision=2, updated_at='2026-09-19T14:14:24Z')
+complete None

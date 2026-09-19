@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+build/
+dist/
+wheelhouse/
+*.egg-info/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Local first-use results
+output/
+.env
+__pycache__/
+*.egg-info/
+build/
+dist/

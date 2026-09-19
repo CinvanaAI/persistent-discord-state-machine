@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "persistent-discord-state-machine"
+version = "0.1.0"
+description = "Restart-safe SQLite workflow sessions for Discord-style multi-step interactions."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE.md"}
+authors = [{name = "Cinvana Lab"}]
+
+[tool.setuptools.packages.find]
+include = ["persistent_discord_state_machine*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
