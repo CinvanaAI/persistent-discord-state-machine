@@ -180,28 +180,33 @@ class SqliteSessionStore:
                 raise ConcurrentUpdateError("session changed during transition")
         return self.require(guild_id, user_id)
 
-    def complete(self, guild_id: int, user_id: int, *, expected_state: str | None = None) -> None:
+    def complete(
+        self, guild_id: int, user_id: int, *, expected_state: str | None = None,
+        expected_revision: int | None = None,
+    ) -> None:
+        """Remove a session only when all supplied state/revision guards match."""
         with self._connect() as connection:
-            if expected_state is None:
-                result = connection.execute(
-                    "DELETE FROM workflow_sessions WHERE guild_id=? AND user_id=?",
-                    (guild_id, user_id),
-                )
-            else:
-                result = connection.execute(
-                    "DELETE FROM workflow_sessions WHERE guild_id=? AND user_id=? AND state=?",
-                    (guild_id, user_id, expected_state),
-                )
+            clauses = ["guild_id=?", "user_id=?"]
+            values: list[Any] = [guild_id, user_id]
+            if expected_state is not None:
+                clauses.append("state=?")
+                values.append(expected_state)
+            if expected_revision is not None:
+                clauses.append("revision=?")
+                values.append(expected_revision)
+            result = connection.execute(
+                "DELETE FROM workflow_sessions WHERE " + " AND ".join(clauses), values
+            )
             if result.rowcount != 1:
                 current = connection.execute(
-                    "SELECT state FROM workflow_sessions WHERE guild_id=? AND user_id=?",
+                    "SELECT state, revision FROM workflow_sessions WHERE guild_id=? AND user_id=?",
                     (guild_id, user_id),
                 ).fetchone()
                 if current is None:
                     raise SessionNotFoundError(f"no active session for guild={guild_id} user={user_id}")
-                raise SessionStateError(
-                    f"session is in state {current['state']!r}, not {expected_state!r}"
-                )
+                if expected_state is not None and current["state"] != expected_state:
+                    raise SessionStateError(f"session is in state {current['state']!r}, not {expected_state!r}")
+                raise ConcurrentUpdateError(f"expected revision {expected_revision}, found {current['revision']}")
 
     @staticmethod
     def _validate_state(state: str) -> str:

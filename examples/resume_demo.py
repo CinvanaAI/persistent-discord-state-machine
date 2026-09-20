@@ -1,10 +1,11 @@
 from pathlib import Path
 import sys
+import json
 from tempfile import TemporaryDirectory
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from persistent_discord_state_machine import SqliteSessionStore
+from persistent_discord_state_machine import SqliteSessionStore, ConcurrentUpdateError
 
 
 def main() -> None:
@@ -27,7 +28,16 @@ def main() -> None:
             expected_revision=resumed.revision,
         )
         print("transitioned", finished)
-        restarted_process.complete(42, 1001, expected_state="confirm")
+        revised = restarted_process.transition(42, 1001, expected_state="confirm",
+            next_state="confirm", payload={**finished.payload, "name": "Revised Hero"},
+            expected_revision=finished.revision)
+        try:
+            restarted_process.complete(42, 1001, expected_state="confirm", expected_revision=finished.revision)
+        except ConcurrentUpdateError:
+            print("stale confirmation rejected; preserved payload", json.dumps(restarted_process.require(42, 1001).payload, sort_keys=True))
+        else:
+            raise AssertionError("stale confirmation deleted the current session")
+        restarted_process.complete(42, 1001, expected_state="confirm", expected_revision=revised.revision)
         print("complete", restarted_process.get(42, 1001))
 
 
